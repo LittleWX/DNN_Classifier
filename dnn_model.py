@@ -276,18 +276,21 @@ def update_parameters(parameters, grads, learning_rate):
 
     return parameters
 
-def L_layer_model(X, Y, layers_dims, learning_rate=0.0075, num_iterations=3000, lambd = 0.0, print_cost=False):
+def L_layer_model(X, Y, layers_dims, learning_rate=0.0075, num_iterations=3000, lambd = 0.0, num_batches=1, print_cost=False):
     costs = []    
     parameters = initialize_parameters_deep(layers_dims)
+    batch_size = Y.shape[1]//num_batches
+    
     for i in range(num_iterations):
-        AL, caches = L_model_forward(X, parameters)
-        cost = compute_cost(AL, Y)
-        grads = L_model_backward(AL, Y, caches, lambd=lambd)
-        parameters = update_parameters(parameters, grads, learning_rate)
-        
-        if print_cost and i%100 == 0:
-            print("Cost after iteration {}:{}" .format(i, np.squeeze(cost)))
-            costs.append(cost)
+        for j in range(num_batches):
+            AL, caches = L_model_forward(X[:, j*batch_size : (j+1)*batch_size], parameters)
+            cost = compute_cost(AL, Y[:, j*batch_size : (j+1)*batch_size])
+            grads = L_model_backward(AL, Y[:, j*batch_size : (j+1)*batch_size], caches, lambd=lambd)
+            parameters = update_parameters(parameters, grads, learning_rate)
+            
+            if print_cost and i%100 == 0:
+                print("Cost after iteration {}:{}" .format(i, np.squeeze(cost)))
+                costs.append(cost)
     #plot the cost
     plt.plot(np.squeeze(costs))
     plt.ylabel('cost')
