@@ -18,8 +18,8 @@ def onehot_encode(Y, C):
 
 def load_datasets():
     
-    train_dataset = "iris_training.csv"
-    test_dataset = "iris_test.csv"
+    train_dataset = "datasets/iris_training.csv"
+    test_dataset = "datasets/iris_test.csv"
     training_set = tf.contrib.learn.datasets.base.load_csv_with_header(
       filename=train_dataset,
       target_dtype=np.int,

@@ -28,28 +28,8 @@ test_x = test_x_flatten
 
 layers_dims = [train_x.shape[0], 10, 10, 10, clas] #5-layer model
 
-def L_layer_model(X, Y, layers_dims, learning_rate=0.0075, num_iterations=3000, print_cost=False):
-    costs = []    
-    parameters = initialize_parameters_deep(layers_dims)
-    for i in range(num_iterations):
-        AL, caches = L_model_forward(X, parameters)
-        cost = compute_cost(AL, Y)
-        grads = L_model_backward(AL, Y, caches)
-        parameters = update_parameters(parameters, grads, learning_rate)
-        
-        if print_cost and i%100 == 0:
-            print("Cost after iteration {}:{}" .format(i, np.squeeze(cost)))
-            costs.append(cost)
-    #plot the cost
-    plt.plot(np.squeeze(costs))
-    plt.ylabel('cost')
-    plt.xlabel('iterations(per tennns)')
-    plt.title("Learning rate=" + str(learning_rate))
-    plt.show()
-    return parameters
-
 if __name__ == '__main__':
-    parameters = L_layer_model(train_x, train_y_onehot, layers_dims, num_iterations=5000, print_cost=True)
+    parameters = L_layer_model(train_x, train_y_onehot, layers_dims, num_iterations=1000, lambd=1.0, print_cost=True)
     pred_train, _, train_set_Top1, train_set_Top5 = predict(train_x, train_y_onehot, parameters)
     pred_test, topk_pred, test_set_Top1, test_set_Top5 = predict(test_x, test_y_onehot, parameters)
     

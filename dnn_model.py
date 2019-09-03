@@ -176,7 +176,7 @@ def L_model_forward(X, parameters):
     return AL, caches
 
 
-def compute_cost(AL, Y):
+def compute_cost(AL, Y, lambd = 0.0):
 
     m = Y.shape[1]
     cost = 0
@@ -185,12 +185,12 @@ def compute_cost(AL, Y):
     cost = -np.sum(Y*np.log(AL)+(1-Y)*np.log(1-AL))/m
 
     cost = np.squeeze(cost)    #make sure cost.ndim=1
-#    if lambd != 0:
-#        L = len(parameters) // 2
-#        regul = 0
-#        for l in range(L):
-#            regul = regul + np.sum(np.square(parameters["W" + str(l+1)]))    #L2 regularization
-#        cost = cost + lambd * regul *0.5/m
+    if lambd != 0:
+        L = len(parameters) // 2
+        regul = 0
+        for l in range(L):
+            regul = regul + np.sum(np.square(parameters["W" + str(l+1)]))    #L2 regularization
+        cost = cost + lambd * regul *0.5/m
     return cost
 
 
@@ -210,10 +210,12 @@ def linear_backward(dZ, cache):
     return dA_prev, dW, db
 
 
-def linear_activation_backward(dA, cache, activation):
+def linear_activation_backward(dA, cache, activation, lambd = 0.0):
 
     linear_cache, activation_cache = cache
-
+    A, W, b = linear_cache
+    m = A.shape[1]
+    
     if activation == "relu":
         dZ = relu_backward(dA, activation_cache)
         dA_prev, dW, db = linear_backward(dZ, linear_cache)
@@ -229,11 +231,14 @@ def linear_activation_backward(dA, cache, activation):
     elif activation == "softmax":
         dZ = softmax_backward(dA, activation_cache)
         dA_prev, dW, db = linear_backward(dZ, linear_cache)
-
+        
+    if lambd != 0.0:
+        dW = dW + lambd/m * W
+    
     return dA_prev, dW, db
 
 
-def L_model_backward(AL, Y, caches):
+def L_model_backward(AL, Y, caches, lambd = 0.0):
 
     grads = {}
     L = len(caches)  # the number of layers
@@ -246,13 +251,13 @@ def L_model_backward(AL, Y, caches):
     # Lth layer (SIGMOID -> LINEAR) gradients. Inputs: "AL, Y, caches". Outputs: "grads["dAL"], grads["dWL"], grads["dbL"]
     current_cache = caches[L - 1]
     grads["dA" + str(L)], grads["dW" + str(L)], grads["db" + str(L)] = linear_activation_backward(dAL, current_cache,
-                                                                                                  activation="softmax")
+                                                                                                  activation="softmax", lambd = lambd)
 
     for l in reversed(range(L - 1)):
         # lth layer: (RELU -> LINEAR) gradients.
         current_cache = caches[l]
         dA_prev_temp, dW_temp, db_temp = linear_activation_backward(grads["dA" + str(l + 2)], current_cache,
-                                                                    activation="relu")
+                                                                    activation="relu", lambd=lambd)
         grads["dA" + str(l + 1)] = dA_prev_temp
         grads["dW" + str(l + 1)] = dW_temp
         grads["db" + str(l + 1)] = db_temp
@@ -271,6 +276,25 @@ def update_parameters(parameters, grads, learning_rate):
 
     return parameters
 
+def L_layer_model(X, Y, layers_dims, learning_rate=0.0075, num_iterations=3000, lambd = 0.0, print_cost=False):
+    costs = []    
+    parameters = initialize_parameters_deep(layers_dims)
+    for i in range(num_iterations):
+        AL, caches = L_model_forward(X, parameters)
+        cost = compute_cost(AL, Y)
+        grads = L_model_backward(AL, Y, caches, lambd=lambd)
+        parameters = update_parameters(parameters, grads, learning_rate)
+        
+        if print_cost and i%100 == 0:
+            print("Cost after iteration {}:{}" .format(i, np.squeeze(cost)))
+            costs.append(cost)
+    #plot the cost
+    plt.plot(np.squeeze(costs))
+    plt.ylabel('cost')
+    plt.xlabel('iterations(per tennns)')
+    plt.title("Learning rate=" + str(learning_rate))
+    plt.show()
+    return parameters
 
 def predict(X, y, parameters, top=3):
 
